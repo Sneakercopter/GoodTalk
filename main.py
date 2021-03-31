@@ -1,4 +1,4 @@
-import APIManager
+from client import APIManager
 
 realKey = "APENL-4N9L1-2KA9D-3JX0-44LSK"
 notRealKey = "AAAAA-AAAAA-AAAAA-AAAAA-AAAAA"

@@ -1,4 +1,4 @@
-import APIRequest
+from client import APIRequest
 
 class APIManager:
 
