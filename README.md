@@ -8,7 +8,7 @@ This repository serves as a proof of concept implementation of a proposed protoc
 The implementation presented here uses a Python HTTP server and client implementation to demonstrate the signature and integrity validation process. The concepts presented in this example are not limited to this application and can be applied across any language and protocol.
 
 ## Example Server
-An example server running the server code from this repository is available at ```https://authentication.sneakercopter.io/authenticate```. You can use the client example within this repository to connect and test the protocol using this URL **NOTE: This example server is rate limited and will restrict your access if request frequency is too high, so please play nice!**
+An example server running the server code from this repository is available at ```https://api.sneakercopter.io/authenticate```. You can use the client example within this repository to connect and test the protocol using this URL **NOTE: This example server is rate limited and will restrict your access if request frequency is too high, so please play nice!**
 
 ## Valid Keys for Example Server 
 - `APENL-4N9L1-2KA9D-3JX0-44LSK`
@@ -29,7 +29,7 @@ A simple implementation of the client side code is available at `GoodTalk/main.p
 To change the example code to connect to your local server go into `main.py` and change the line
 
 ```python
-apiMgr = APIManager.APIManager("https://authentication.sneakercopter.io")
+apiMgr = APIManager.APIManager("https://api.sneakercopter.io")
 ```
 
 To
