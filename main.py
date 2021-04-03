@@ -8,7 +8,7 @@ apiMgr = APIManager.APIManager("https://api.sneakercopter.io")
 print("Checking key: %s" % realKey)
 validity = apiMgr.verifyKey(realKey)
 print("Authentication success: %s" % validity)
-    
+
 # Will be invalid
 print("Checking key: %s" % notRealKey)
 validity = apiMgr.verifyKey(notRealKey)

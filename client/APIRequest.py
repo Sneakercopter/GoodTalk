@@ -5,17 +5,19 @@ import hashlib
 import hmac
 import base64
 import os
+from client import KeyDerivation
 
 class APIRequest:
 
     def __init__(self, apiEndpoint):
+        self.kdf = KeyDerivation.KeyDerivation()
         self.session = requests.session()
-        self.secretKey = bytes("PleaseDontFindMe!", "utf-8")
         self.currentVersion = "0.0.1"
         self.apiEndpoint = apiEndpoint
 
-    def generateHmac(self, messageString):
-        hashGen = hmac.new(self.secretKey, messageString, hashlib.sha256)
+    def generateHmac(self, messageString, nonce):
+        secretKey = self.kdf.deriveKey(nonce)
+        hashGen = hmac.new(secretKey, messageString, hashlib.sha256)
         messageHash = hashGen.hexdigest()
         return messageHash
 
@@ -51,6 +53,7 @@ class APIRequest:
     # Fires the actual JSON request to the API endpoint and 
     def sendApiRequest(self, endpoint, jsonData):
         r = self.session.post(endpoint, json=jsonData)
+        print(r.text)
         if r.status_code != 200:
             self.parseErrorResponse(r)
             return None
@@ -69,7 +72,7 @@ class APIRequest:
             "serverNonce": response["serverNonce"]
         }
         serverValidationString = json.dumps(serverValidation).encode("utf-8")
-        serverHash = self.generateHmac(serverValidationString)
+        serverHash = self.generateHmac(serverValidationString, response["serverNonce"])
         return hmac.compare_digest(serverHash, response["serverSignature"])
 
     def verifyKey(self, key):
@@ -80,7 +83,7 @@ class APIRequest:
             "version": self.currentVersion
         }
         messageString = json.dumps(message).encode("utf-8")
-        messageHash = self.generateHmac(messageString)
+        messageHash = self.generateHmac(messageString, nonce)
         message["hmac"] = messageHash
         serverResp = self.sendApiRequest(self.apiEndpoint + "/authenticate", message)
         if not serverResp:

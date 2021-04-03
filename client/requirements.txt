@@ -1,1 +1,2 @@
 requests==2.25.1
+pycrypto==2.6.1

@@ -5,11 +5,12 @@ import json
 import random
 import base64
 import os
+import KeyDerivation
 
 class ServerUtils:
 
     def __init__(self):
-        self.secretKey = bytes("PleaseDontFindMe!", "utf-8")
+        self.kdf = KeyDerivation.KeyDerivation()
         self.currentVersion = "0.0.1"
 
     # Nonce generation from https://github.com/joestump/python-oauth2/issues/9
@@ -33,7 +34,8 @@ class ServerUtils:
             "version": version
         }
         messageString = json.dumps(message).encode("utf-8")
-        hashGen = hmac.new(self.secretKey, messageString, hashlib.sha256)
+        secretKey = self.kdf.deriveKey(nonce)
+        hashGen = hmac.new(secretKey, messageString, hashlib.sha256)
         messageHash = hashGen.hexdigest()
         return hmac.compare_digest(messageHash, _hmac)
 
@@ -52,7 +54,8 @@ class ServerUtils:
             "serverNonce": serverNonce
         }
         messageString = json.dumps(message).encode("utf-8")
-        hashGen = hmac.new(self.secretKey, messageString, hashlib.sha256)
+        secretKey = self.kdf.deriveKey(serverNonce)
+        hashGen = hmac.new(secretKey, messageString, hashlib.sha256)
         messageHash = hashGen.hexdigest()
         message["serverSignature"] = messageHash
         return message
