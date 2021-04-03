@@ -41,8 +41,6 @@ apiMgr = APIManager.APIManager("http://127.0.0.1:443")
 ## Protocol Outline
 The protocol implemented in this example is focused on deciding if a given product key is valid or not. However, the scope of use goes beyond this simple interaction into entire API applications. The flow for this implementation together with key details is as follows:
 
-- Selection of a private key that is shared by both client and server (Located in `GoodTalk/client/APIRequest.py` for client and `GoodTalk/server/ServerUtils.py`, defined as `PleaseDontFindMe!`).
-- **IMPORTANT:** Key selection and protection is the task of the built binary on the client side and it is strongly encouraged to not store the key in plaintext within the binary and recommended to use a key derivation function instead.
 - When making a request to the API, first the request itself is defined. For the authentication example presented here JSON requests are used and the authentication data is defined as follows: 
 ```json
 {
@@ -58,7 +56,10 @@ The protocol implemented in this example is focused on deciding if a given produ
     "version": "0.0.1"
 }
 ```
-- Finally, a hash is made of the entire request body thus far. This hash is referred to as an HMAC (Hashed Message Authentication Code). The HMAC takes the secret key we previously defined is added to the JSON string to ensure that a verification HMAC cannot be computed without the key. We use SHA256 as the method in this example as there are no known collision methods. The object with this hash attached now is
+- Next, using the randomly generated nonce as an input, a key is derived in `client/KeyDerivation.py`. In this example it uses an implementation of `PBKDF2` with a hardcoded salt and iteration value. However, for production implementations it is recommended to customise this functionality to there is less standardisation for attackers to look for when analysing your binary.
+- **Note:** Due to the implementation of `PBKDF2` here the hmac secret key will *always* be unique for every transaction. This is intentional to stop a simple memory dump unlocking all previous and future transmissions. It is recommended to heavily obfuscate this implementation within a compiled binary to throw off any attackers.
+- Finally, a hash is made of the entire request body thus far. This hash is referred to as an HMAC (Hashed Message Authentication Code). The HMAC takes the secret key we previously derived and it is added to the JSON string to ensure that a verification HMAC cannot be computed without the key. We use SHA256 as the method in this example as there are no known collision methods. The object with this hash attached now is
+- **Important:** The key itself is **NEVER** sent, only the signature and the derivation nonce. 
 ```json
 {
     "key": "THIS-IS-MY-KEY",
@@ -78,7 +79,9 @@ The protocol implemented in this example is focused on deciding if a given produ
     "serverNonce": "ZM7a7WI_RioPOE"
 }
 ```
-- The server adds an additional nonce to the request to ensure that repeated responses with the same initial content will generate a completely unique server signature each time. This signature is constructed in the same way the `hmac` value was during the client request generation. The whole message is converted to a string and the secret key is added to the string to ensure the hash cannot be trivially derived without it. The final response request then will be sent as the following object:
+- The server adds an additional nonce to the request to ensure that repeated responses with the same initial content will generate a completely unique server signature each time. This signature is constructed in the same way the `hmac` value was during the client request generation. 
+- The server will also share the same key derivation functionality as the client and derive a new key based on the `serverNonce`. This is the key that will be used to sign the `serverSignature` - not the same key that the client used.
+- The whole message is converted to a string and the derived secret key is added to the string to ensure the hash cannot be trivially generated without it. The final response request then will be sent as the following object:
 ```json
 {
     "key": "THIS-IS-MY-KEY",
@@ -91,7 +94,7 @@ The protocol implemented in this example is focused on deciding if a given produ
 ```
 - Once the server response arrives at the client, the first task the client **must** do is to verify the server response. The unique step in this process is to validate that the `hmac` and `nonce` that have been returned are also the same ones that were initially sent. This is **vitally important** to keep track of as it prevents the reuse of `serverSignature` values from other requests. If this does not match, you may assume that the communication has been comprimised and let your application react appropriately.
 - If all checks out however, the final step is to validate the `serverSignature`. This is done in the same way the initial `hmac` was checked. A new JSON object is created including all response values except for the `serverSignature`. The JSON object is then hashed in the same way that the original `hmac` was created by the client and is checked to ensure that the value the client calculated matches the returned `serverSignature`. If it is not a match, you may assume that the communication has been comprimised and let your application react appropriately.
-- The transaction is now complete and you can assume with a high certainty that as long *as the secret key has not been comprimised* that the messages from both the client and server were sent and recieved without tampering during transmission. This is validated through the random selection of `nonce` values and validation of `hmac` and `serverSignature` by both the client and server.
+- The transaction is now complete and you can assume with a high certainty that as long *as the secret derivation function key has not been reverse engineered* that the messages from both the client and server were sent and recieved without tampering during transmission. This is validated through the random selection of `nonce` values and validation of `hmac` and `serverSignature` by both the client and server.
 
 ## Outside of Scope
 It is strongly encouraged to implement SSL into your implementation of this protocol to add another layer of protection and to stop the reading of sensitive values during transmission on public networks. This can be further solidified through the use of SSL pinning on the client side but this is outside of the scope of this project.
