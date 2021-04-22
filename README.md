@@ -19,9 +19,10 @@ An example server running the server code from this repository is available at `
 Running the server for this project is easy through the use of Docker. Simply navigate to `GoodTalk/server` in your preferred terminal and run the following commands
 
 - `docker build -t nice-talk-example .`
-- `docker run -p 443:443 nice-talk-example`
 
-Now you can send your requests from the example client to `http://127.0.0.1:443/authenticate`. Alternatively, you can build this container image directly and push it to a remote image repository and deploy it to a containerised service. Before doing this to a production environment please ensure you understand the full impact of the code as it has **NOT** been analysed and approved for production deployments.
+Next push the image along with a recognizable tag to AWS ECR. Using this you can then deploy the image as a serverless function. To invoke it make sure you add an API Gateway HTTP trigger so that you can interact with it using http requests.
+
+Now you can send your requests from the example client to your AWS Lambda HTTP trigger. Alternatively, you can build this container image directly and push it to a remote image repository and deploy it to a containerised service. Before doing this to a production environment please ensure you understand the full impact of the code as it has **NOT** been analysed and approved for production deployments.
 
 ## Running the Client
 A simple implementation of the client side code is available at `GoodTalk/main.py` with simple example interactions with the implementation code at `GoodTalk/client`. To install the requirements for the client code navigate to the `GoodTalk/client` folder and run `pip3 install -r requirements.txt`. Then afterwards you will be able to execute `main.py` without issue.
